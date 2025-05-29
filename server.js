@@ -22,7 +22,7 @@ import { error, profile } from 'console';
 
 
 const server = express();
-let PORT = 3000;
+let PORT = process.env.PORT || 3000;
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
