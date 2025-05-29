@@ -4,7 +4,7 @@ import 'dotenv/config'
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken';
-import cors from 'cors';
+// import cors from 'cors';
 import { OAuth2Client } from 'google-auth-library';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
@@ -42,10 +42,10 @@ const allowedOrigins = [
   'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'
 ];
 
-server.use(cors({
-  origin: ['https://frontend-learnify-web.vercel.app', 'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'],
-  credentials: true
-}));
+// server.use(cors({
+//   origin: ['https://frontend-learnify-web.vercel.app', 'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'],
+//   credentials: true
+// }));
 
 const adminAdd = async () => {
   const adminData = {
@@ -204,7 +204,7 @@ const sentCookiesHttpOnly = (res, nameCookies, data) => {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 днів
   });
 
-  // console.log(data)
+
 }
 
 const verifyJWT = (req, res, next) => {
