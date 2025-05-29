@@ -37,10 +37,19 @@ mongoose.connect(process.env.DB_LOCATION, {
 
 server.use(express.json());
 server.use(cookieParser());
+const allowedOrigins = [
+  'https://frontend-learnify-web.vercel.app',
+  'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'
+];
+
 server.use(cors({
-  // origin: 'http://localhost:5173', 
-  origin: 'https://frontend-learnify-web.vercel.app/',
-  credentials: true // дозволяє надсилати кукі між клієнтом і сервером
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
 }));
 
 const adminAdd = async () => {
