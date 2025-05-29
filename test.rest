@@ -1,0 +1,7 @@
+POST https://backend-learnify-web.onrender.com/signin
+Content-Type: application/json
+
+{
+  "email": "admin@adm.com",
+  "password": "1234Ferd"
+}

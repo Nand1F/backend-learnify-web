@@ -4,7 +4,7 @@ import 'dotenv/config'
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken';
-// import cors from 'cors';
+import cors from 'cors';
 import { OAuth2Client } from 'google-auth-library';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
@@ -28,8 +28,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 
-let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // Шаблон для пошти
-let passwordRegex = /^(?=.*\d)(?=.*[a-zа-яєіїґ])(?=.*[A-ZА-ЯЄІЇҐ]).{6,20}$/; // Шаблон для пароля
+let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+let passwordRegex = /^(?=.*\d)(?=.*[a-zа-яєіїґ])(?=.*[A-ZА-ЯЄІЇҐ]).{6,20}$/;
 
 mongoose.connect(process.env.DB_LOCATION, {
   autoIndex: true
@@ -37,25 +37,20 @@ mongoose.connect(process.env.DB_LOCATION, {
 
 server.use(express.json());
 server.use(cookieParser());
-const allowedOrigins = [
-  'https://frontend-learnify-web.vercel.app',
-  'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'
-];
-
-// server.use(cors({
-//   origin: ['https://frontend-learnify-web.vercel.app', 'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'],
-//   credentials: true
-// }));
+server.use(cors({
+  origin: 'http://localhost:5173', // або твій реальний фронтовий домен
+  credentials: true // дозволяє надсилати кукі між клієнтом і сервером
+}));
 
 const adminAdd = async () => {
   const adminData = {
     personal_info: {
       fullname: "Головний Адмін",
       email: "admin@adm.com",
-      password: "1234Ferd", // спочатку простий пароль, згодом буде хеш
+      password: "1234Ferd",
       user_id: "mainAdmin",
       profile_img: "",
-      role: "admin", // або "admin", якщо така роль є
+      role: "admin",
     },
     google_auth: false,
   };
@@ -197,13 +192,10 @@ const createCourseNotification = async (courseId, type, options) => {
 const sentCookiesHttpOnly = (res, nameCookies, data) => {
   res.cookie(nameCookies, data, {
     httpOnly: true,
-    // secure: false,            // true якщо ти на HTTPS (на проді)
-    // sameSite: "Lax",          // або "None" якщо HTTPS і хочеш крос-домен
-    secure: true,
-    sameSite: 'None',
+    secure: false,            // true якщо ти на HTTPS (на проді)
+    sameSite: "Lax",          // або "None" якщо HTTPS і хочеш крос-домен
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 днів
   });
-
 
 }
 
@@ -254,7 +246,7 @@ const deleteLesson = async ({ lessonId }) => {
         try {
           await deleteFile(file.storedName);
         } catch (err) {
-          console.error(`Помилка при видаленні файла з S3: ${file.fileName}`, err);
+          console.error(`Error delete file: ${file.fileName}`, err);
         }
       }
     }
@@ -285,7 +277,7 @@ const deleteLesson = async ({ lessonId }) => {
   course.lessonsId = course.lessonsId.filter(id => String(id) !== lessonId);
   await course.save();
   await Lesson.findByIdAndDelete(lessonId);
-  return { message: "Урок успішно видалено." };
+  return { message: "Lesson delete" };
 };
 
 const deleteCourse = async ({ courseId }) => {
@@ -301,12 +293,11 @@ const deleteCourse = async ({ courseId }) => {
   }
 
   await Course.findByIdAndDelete(courseId);
-  return { message: "Курс успішно видалено." };
+  return { message: "Course delete" };
 };
 
 const getAvatar = async (user) => {
   console.log(user)
-  console.log("Отриманий тип аватару: " + user.user_avatar_type)
   const type = user.user_avatar_type;
 
   if (type === "default") {
@@ -334,7 +325,6 @@ const getAvatar = async (user) => {
 
 server.post('/auth-user', async (req, res) => {
   const token = req.cookies.access_token;
-  // console.log(token)
 
   if (!token) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -342,9 +332,6 @@ server.post('/auth-user', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.SECRET_ACCESS_KEY);
-    // console.log(decoded);
-
-
 
     return res.status(200).json({
       access_token: token,
@@ -510,14 +497,12 @@ server.post('/logout', (req, res) => {
     sameSite: "Lax"
   });
 
-  res.json({ message: "Вихід успішний" });
+  res.json({ message: "ok" });
 });
 
 server.post('/user-courses', verifyJWT, async (req, res) => {
   try {
     const userId = req.decodedUser.user_id;
-
-    // Курси, де користувач є в invitedUsers
     const invitedCourses = await Course.find({ invitedUsers: userId })
 
       .select("title description teacherId")
@@ -532,7 +517,7 @@ server.post('/user-courses', verifyJWT, async (req, res) => {
       course.teacherId.personal_info.profile_img = await getAvatar(course.teacherId);
     }
 
-    // Курси, де користувач є викладачем
+
     const ownCourses = await Course.find({ teacherId: userId })
       .select("title description teacherId")
       .populate({
@@ -541,7 +526,7 @@ server.post('/user-courses', verifyJWT, async (req, res) => {
         select: 'personal_info.fullname personal_info.profile_img user_avatar_type'
       })
       .sort({ createdAt: -1 });
-    // console.log(ownCourses)
+
     const avatarCache = new Map(); // Кеш для збереження avatarUrl
 
     for (const course of ownCourses) {
@@ -568,8 +553,8 @@ server.post('/user-courses', verifyJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Помилка при отриманні курсів:', error);
-    res.status(500).json({ error: "Внутрішня помилка сервера" });
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -644,7 +629,7 @@ server.post("/course/lesson/:id", verifyJWT, async (req, res) => {
       });
 
     if (!course) {
-      return res.status(404).json({ error: "Курс не знайдено" });
+      return res.status(404).json({ error: "Course not found" });
     }
 
     course.teacherId.personal_info.profile_img = await getAvatar(course.teacherId)
@@ -680,8 +665,8 @@ server.post("/course/lesson/:id", verifyJWT, async (req, res) => {
       teacherInfo: course.teacherId
     })
   } catch (err) {
-    console.error("Помилка при отриманні уроку:", err);
-    return res.status(500).json({ error: "Внутрішня помилка сервера" });
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -759,7 +744,6 @@ server.post('/pull/files/:id', verifyJWT, async (req, res) => {
   try {
     const lessonId = req.params.id;
     const { lessonType } = req.body;
-    console.log("Тип уроку який запрошує файли: " + lessonType + " по id уроку/завдання " + lessonId)
     const userId = req.decodedUser.user_id;
 
     let response = null
@@ -770,7 +754,6 @@ server.post('/pull/files/:id', verifyJWT, async (req, res) => {
     }
 
     if (!response) {
-      console.log("В даного уроку/завдання нема прикріплених файлів ! ")
       return res.json([]);
     }
 
@@ -778,12 +761,11 @@ server.post('/pull/files/:id', verifyJWT, async (req, res) => {
     for (let file of files) {
       file.url = await getObjectSignedUrl(file.storedName);
     }
-    console.log("Прикріплені файли уроку: " + files)
     return res.json(files);
 
   } catch (err) {
     console.log(err)
-    return res.status(500).json({ error: "Поимлка під час отримання відповіді :" + err })
+    return res.status(500).json({ error: "Server error" + err })
   }
 
 });
@@ -835,8 +817,8 @@ server.post('/course/create', verifyJWT, async (req, res) => {
 
     return res.status(201).json({ course: courseData });
   } catch (error) {
-    console.error("Помилка створення курсу:", error);
-    res.status(500).json({ message: "Помилка сервера" });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -941,10 +923,10 @@ server.post('/lessons/create/:courseId', upload.array('files', 10), async (req, 
 
 
 
-    res.status(201).json({ message: "Урок/завдання успішно створено!" });
+    res.status(201).json({ message: "Lesson create" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Помилка при створенні уроку/завдання." });
+    res.status(500).json({ error: err });
   }
 });
 
@@ -957,12 +939,11 @@ server.get('/courses/:courseId/invite-code/generate', async (req, res) => {
     course.inviteCode = newInviteCode;
 
     await course.save();
-    console.log("Згенеровано новий код запрошення для курсу: " + course.title + ", код запрошення: " + newInviteCode)
     return res.status(200).json(newInviteCode);
 
   } catch (err) {
-    console.log("Помилка під час генерування коду запрошення ! : " + err)
-    return res.status(500).json("Помилка під час генерування коду запрошення !")
+    console.error(err)
+    return res.status(500).json("Server error")
   }
 
 });
@@ -974,7 +955,7 @@ server.get('/courses/:courseId/people', verifyJWT, async (req, res) => {
   const isAdmin = req.decodedUser.role === "admin" ? true : false;
 
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
-    return res.status(400).json({ error: "Невалідний ID курсу" });
+    return res.status(400).json({ error: "Invalide course ID" });
   }
 
   try {
@@ -1012,8 +993,8 @@ server.get('/courses/:courseId/people', verifyJWT, async (req, res) => {
 
     res.json({ teacher, students });
   } catch (error) {
-    console.error("Помилка при отриманні учасників курсу:", error);
-    res.status(500).json({ error: "Помилка сервера" });
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -1028,13 +1009,13 @@ server.get("/answer/my/:id", verifyJWT, async (req, res) => {
     });
 
     if (!answer) {
-      return res.status(404).json({ message: "Відповідь не знайдена" });
+      return res.status(404).json({ message: "Answer not found" });
     }
 
     res.json(answer);
   } catch (error) {
-    console.error("Помилка при отриманні відповіді:", error);
-    res.status(500).json({ message: "Серверна помилка" });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -1095,8 +1076,8 @@ server.delete("/delete/lesson/:id", verifyJWT, async (req, res) => {
 
     res.status(200).json({ result });
   } catch (err) {
-    console.error("Помилка видалення уроку:", err);
-    res.status(500).json({ error: "Помилка сервера при видаленні уроку." });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -1180,8 +1161,8 @@ server.delete("/delete/course/:id", verifyJWT, async (req, res) => {
     const result = await deleteCourse({ courseId });
     res.status(200).json(result);
   } catch (err) {
-    console.error("Помилка при видаленні курсу:", err);
-    res.status(err.status || 500).json({ error: err.message || "Помилка сервера при видаленні курсу." });
+    console.error(err);
+    res.status(err.status || 500).json({ error: err.message || "Server error" });
   }
 });
 
@@ -1208,7 +1189,6 @@ server.put("/answers/grade/:id", verifyJWT, async (req, res) => {
     answer.grade_info.maxGrade = maxGrade;
     answer.status = "graded"
     await answer.save();
-    console.log("Оцінено завдання: " + answer)
 
     const lesson = await Lesson.findById(lessonId);
 
@@ -1248,7 +1228,6 @@ server.put("/answers/reject/:id", verifyJWT, async (req, res) => {
     answer.feedback = feedback;
     answer.status = "rejected"
     await answer.save();
-    console.log("Повернуто завдання: " + answer)
 
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) return res.status(404).json({ error: "Lesson not found, but answer was returned" })
@@ -1283,7 +1262,6 @@ server.put("/lesson/edit/:id", verifyJWT, async (req, res) => {
     lesson.videoUrl = urlVideo;
     lesson.deadline = deadline;
     await lesson.save();
-    console.log("Урок/Завдання було було оновлено: " + lesson)
     return res.status(200).json(lesson)
 
   } catch (error) {
@@ -1336,7 +1314,6 @@ server.get("/notifications/", verifyJWT, async (req, res) => {
       .limit(limit);
 
     if (!notifications.length) {
-      console.log("Повідомлення відсутні для користувача: " + req.decodedUser.fullname)
       return res.status(404).json({ error: "Notifications not found" })
     }
 
@@ -1457,7 +1434,6 @@ server.post('/profile/upload-avatar', verifyJWT, upload.single('avatar'), async 
 
       user.user_avatar_type = "custom";
       await user.save();
-      console.log("Аватарку було успішно додано !")
     } else {
       const user = await User.findById(userId);
       if (!user) {
@@ -1474,10 +1450,7 @@ server.post('/profile/upload-avatar', verifyJWT, upload.single('avatar'), async 
 
       user.user_avatar_type = "custom";
       await user.save();
-      console.log("Аватарку було оновлено !")
     }
-
-    console.log(" Посилання на автар: " + url)
     res.status(200).json({ url });
   } catch (error) {
     console.error(error)
