@@ -43,12 +43,7 @@ const allowedOrigins = [
 ];
 
 server.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: ['https://frontend-learnify-web.vercel.app', 'https://frontend-learnify-web-git-main-nand1fs-projects.vercel.app'],
   credentials: true
 }));
 
@@ -202,8 +197,10 @@ const createCourseNotification = async (courseId, type, options) => {
 const sentCookiesHttpOnly = (res, nameCookies, data) => {
   res.cookie(nameCookies, data, {
     httpOnly: true,
-    secure: false,            // true якщо ти на HTTPS (на проді)
-    sameSite: "Lax",          // або "None" якщо HTTPS і хочеш крос-домен
+    // secure: false,            // true якщо ти на HTTPS (на проді)
+    // sameSite: "Lax",          // або "None" якщо HTTPS і хочеш крос-домен
+    secure: true,
+    sameSite: 'None',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 днів
   });
 
