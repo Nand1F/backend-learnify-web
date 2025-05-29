@@ -52,3 +52,4 @@ export async function getObjectSignedUrl(key) {
 
   return url
 }
+

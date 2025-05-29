@@ -6,24 +6,16 @@ const notificationSchema = mongoose.Schema({
         ref: "users",
         required: true
     },
-    type: {
-        type: String,
-        enum: ["TaskAssigned", "TaskReviewed", "NewLessonPublished"],
-        required: true
-    },
-    message: {
-        type: String,
-        required: true
-    },
+    title: String,
+    message: String,
     link: String,
-    status: {
-        type: String,
-        enum: ["SENT", "DELIVERED", "READ"],
-        default: "SENT"
+    isRead: {
+        type: Boolean,
+        default: false
     },
-    sentAt: Date
+
 }, {
-    timestamps: { createdAt: 'createdAt' }
+    timestamps: true
 });
 
 export default mongoose.model("notifications", notificationSchema);

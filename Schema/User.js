@@ -34,7 +34,7 @@ const userSchema = mongoose.Schema({
         },
         role: {
             type: String,
-            enam: ["user", "teacher"],
+            enam: ["user", "admin"],
             default: "user",
 
         }
@@ -46,6 +46,15 @@ const userSchema = mongoose.Schema({
         }]
     },
     google_auth: {
+        type: Boolean,
+        default: false
+    },
+    user_avatar_type: {
+        type: String,
+        enam: ["default", "google", "custom"],
+        default: "default",
+    },
+    isBlocked: {
         type: Boolean,
         default: false
     }

@@ -9,7 +9,7 @@ const AttachedFileSchema = mongoose.Schema({
   ownerModel: {
     type: String,
     required: true,
-    enum: ['answers', 'lesson']
+    enum: ['answers', 'lesson', 'users']
   },
   originalName: {
     type: String,

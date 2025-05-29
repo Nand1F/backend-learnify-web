@@ -30,11 +30,6 @@ const courseSchema = mongoose.Schema({
   inviteCode: {
     type: String,
   },
-  status: {
-    type: String,
-    enum: ["Draft", "Published", "Archived"],
-    default: "Draft"
-  }
 }, {
   timestamps: {
     createdAt: 'joinedAt'
