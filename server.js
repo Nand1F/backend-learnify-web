@@ -38,7 +38,8 @@ mongoose.connect(process.env.DB_LOCATION, {
 server.use(express.json());
 server.use(cookieParser());
 server.use(cors({
-  origin: 'http://localhost:5173', // або твій реальний фронтовий домен
+  // origin: 'http://localhost:5173', 
+  origin: 'https://frontend-learnify-web.vercel.app/',
   credentials: true // дозволяє надсилати кукі між клієнтом і сервером
 }));
 
