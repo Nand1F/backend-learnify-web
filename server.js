@@ -38,8 +38,8 @@ mongoose.connect(process.env.DB_LOCATION, {
 server.use(express.json());
 server.use(cookieParser());
 server.use(cors({
-  origin: 'http://localhost:5173', // або твій реальний фронтовий домен
-  credentials: true // дозволяє надсилати кукі між клієнтом і сервером
+  origin: process.env.CORS_URL,
+  credentials: true
 }));
 
 const adminAdd = async () => {
@@ -1451,7 +1451,7 @@ server.post('/profile/upload-avatar', verifyJWT, upload.single('avatar'), async 
       user.user_avatar_type = "custom";
       await user.save();
     }
-    res.status(200).json({ url });
+    return res.status(200).json({ url });
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: error })

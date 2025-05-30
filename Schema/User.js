@@ -21,7 +21,7 @@ const userSchema = mongoose.Schema({
         user_id: {
             type: String,
             unique: true,
-            sparse: true // щоб уникнути помилок, коли це поле відсутнє
+            sparse: true
         },
         bio: {
             type: String,
