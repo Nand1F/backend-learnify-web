@@ -192,8 +192,8 @@ const createCourseNotification = async (courseId, type, options) => {
 const sentCookiesHttpOnly = (res, nameCookies, data) => {
   res.cookie(nameCookies, data, {
     httpOnly: true,
-    secure: false,            // true якщо ти на HTTPS (на проді)
-    sameSite: "Lax",          // або "None" якщо HTTPS і хочеш крос-домен
+    secure: config.IS_DEV_ENV ? false : true,            // true якщо ти на HTTPS (на проді)
+    sameSite: config.IS_DEV_ENV ? "Lax" : "None",          // або "None" якщо HTTPS і хочеш крос-домен
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 днів
   });
 
