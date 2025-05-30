@@ -18,6 +18,7 @@ import AttachedFile from './Schema/AttachedFile.js';
 import Lesson from "./Schema/Lesson.js";
 import Notification from './Schema/Notification.js';
 import { error, profile } from 'console';
+import { config } from './config.js';
 
 
 
