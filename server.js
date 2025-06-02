@@ -494,8 +494,8 @@ server.post("/signin", async (req, res) => {
 server.post('/logout', (req, res) => {
   res.clearCookie("access_token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "Lax"
+    secure: config.IS_DEV_ENV ? false : true,            // true якщо ти на HTTPS (на проді)
+    sameSite: config.IS_DEV_ENV ? "Lax" : "None",
   });
 
   res.json({ message: "ok" });
