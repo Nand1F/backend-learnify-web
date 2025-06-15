@@ -34,7 +34,7 @@ const answerSchema = mongoose.Schema({
   feedback: String,
   status: {
     type: String,
-    enum: ['awaiting', 'submitted', 'graded', 'rejected'],
+    enum: ['awaiting', 'submitted', 'graded', 'rejected', 'late'],
     default: 'awaiting'
   },
   submittedAt: {
