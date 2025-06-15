@@ -298,7 +298,7 @@ const deleteCourse = async ({ courseId }) => {
 };
 
 const getAvatar = async (user) => {
-  console.log(user)
+  // console.log(user)
   const type = user.user_avatar_type;
 
   if (type === "default") {
@@ -421,10 +421,9 @@ server.post("/signup", (req, res) => {
     return res.status(405).json({ "error": "Password should be 6 to 20 characters Kong with a numeric, 1 lowercase and 1 uppercase letters" })
   }
 
-  bcrypt.hash(password, 10, (err, hashed_password) => {
-    let user_id =
-      console.log(hashed_password);
-  })
+  // bcrypt.hash(password, 10, (err, hashed_password) => {
+  //   let user_id = console.log(hashed_password);
+  // })
 
   bcrypt.hash(password, 10, async (err, hashed_password) => {
     let user_id = await generateUserID(email);
@@ -473,7 +472,6 @@ server.post("/signin", async (req, res) => {
         if (!result) {
           return res.status(404).json({ "error": "Incorrect password" });
         } else {
-          // console.log(result);
           const datatoSend = await formatDatatoSend(user)
           sentCookiesHttpOnly(res, "access_token", datatoSend.access_token)
           return res.status(200).json(datatoSend);
@@ -484,7 +482,7 @@ server.post("/signin", async (req, res) => {
 
     })
     .catch(err => {
-      console.log(err.message);
+      console.error(err.message);
       return res.status(500).json({ "error": err.message })
 
     })
@@ -494,7 +492,7 @@ server.post("/signin", async (req, res) => {
 server.post('/logout', (req, res) => {
   res.clearCookie("access_token", {
     httpOnly: true,
-    secure: config.IS_DEV_ENV ? false : true,            // true якщо ти на HTTPS (на проді)
+    secure: config.IS_DEV_ENV ? false : true,
     sameSite: config.IS_DEV_ENV ? "Lax" : "None",
   });
 
@@ -560,57 +558,65 @@ server.post('/user-courses', verifyJWT, async (req, res) => {
 });
 
 server.post('/course/lessons/:courseId', verifyJWT, async (req, res) => {
-  const userId = req.decodedUser.user_id;
-  const courseId = req.params.courseId;
-  const isAdmin = req.decodedUser.role === "admin" ? true : false;
-
-  const course = await Course.findById(courseId)
-    .populate({
-      path: 'lessonsId',
-      options: { sort: { createdAt: -1 } }
-    })
-    .populate({
-      path: 'teacherId',
-      select: '_id personal_info.fullname personal_info.email personal_info.profile_img user_avatar_type',
-    });
-
-  course.teacherId.personal_info.profile_img = await getAvatar(course.teacherId)
+  try {
+    const userId = req.decodedUser.user_id;
+    const courseId = req.params.courseId;
+    const isAdmin = req.decodedUser.role === "admin" ? true : false;
 
 
-
-  if (!course) {
-    return res.status(404).json({ error: 'Course not found' });
-  }
-
-  if (!isAdmin) {
-    const hasAccess =
-      course.teacherId._id.toString() === userId ||
-      course.invitedUsers.some(user => user.toString() === userId);
-
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(404).json({ error: 'Course not found' });
     }
-  }
+
+    const course = await Course.findById(courseId)
+      .populate({
+        path: 'lessonsId',
+        options: { sort: { createdAt: -1 } }
+      })
+      .populate({
+        path: 'teacherId',
+        select: '_id personal_info.fullname personal_info.email personal_info.profile_img user_avatar_type',
+      });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    course.teacherId.personal_info.profile_img = await getAvatar(course.teacherId)
+
+    if (!isAdmin) {
+      const hasAccess =
+        course.teacherId._id.toString() === userId ||
+        course.invitedUsers.some(user => user.toString() === userId);
+
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
 
 
 
-  let userRole = "user"
+    let userRole = "user"
 
-  if (isAdmin) {
-    userRole = "teacher"
-  } else {
-    if (course.teacherId._id.toString() === userId) {
+    if (isAdmin) {
       userRole = "teacher"
+    } else {
+      if (course.teacherId._id.toString() === userId) {
+        userRole = "teacher"
+      }
     }
+
+
+
+
+    return res.status(200).json({
+      course: course,
+      userRole: userRole
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 
-
-
-
-  return res.status(200).json({
-    course: course,
-    userRole: userRole
-  });
 });
 
 server.post("/course/lesson/:id", verifyJWT, async (req, res) => {
@@ -657,9 +663,6 @@ server.post("/course/lesson/:id", verifyJWT, async (req, res) => {
       }
     }
 
-
-
-    // console.log(lesson)
     return res.status(200).json({
       lesson: lesson,
       userRole: userRole,
@@ -987,7 +990,7 @@ server.get('/courses/:courseId/people', verifyJWT, async (req, res) => {
 
     teacher.personal_info.profile_img = await getAvatar(teacher)
     const students = course.invitedUsers;
-    console.log(students)
+    // console.log(students)
     for (const student of students) {
       student.personal_info.profile_img = await getAvatar(student);
     }
@@ -1121,7 +1124,7 @@ server.get("/answers/by-task/:lessonId", verifyJWT, async (req, res) => {
         const signedFiles = await Promise.all(
           answer.fileIds.map(async (file) => {
             const url = await getObjectSignedUrl(file.storedName);
-            console.log(url)
+            // console.log(url)
             return {
               ...file.toObject(),
               url: url
@@ -1464,7 +1467,7 @@ server.put("/profile/update/:userId", verifyJWT, async (req, res) => {
     const userId = req.params.userId;
     const verifyUserId = req.decodedUser.user_id;
     const { personal_info } = req.body;
-    console.log(personal_info);
+    // console.log(personal_info);
     if (userId !== verifyUserId) return res.status(403).json({ error: "Access denied" })
 
     const user = await User.findById(userId);
