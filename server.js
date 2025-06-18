@@ -1170,6 +1170,32 @@ server.delete("/delete/course/:id", verifyJWT, async (req, res) => {
   }
 });
 
+server.delete("/leave/course/:id", verifyJWT, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.decodedUser.user_id;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    const index = course.invitedUsers.indexOf(userId);
+    if (index === -1) {
+      return res.status(400).json({ error: "User is not part of the course" });
+    }
+
+    course.invitedUsers.splice(index, 1);
+    await course.save();
+
+    res.status(200).json({ message: "You have left the course" });
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ error: err.message || "Server error" });
+  }
+});
+
+
 server.put("/answers/grade/:id", verifyJWT, async (req, res) => {
   try {
     const answerId = req.params.id;
@@ -1663,6 +1689,8 @@ server.delete("/admin/course/:id", verifyJWT, isAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error while deleting course" });
   }
 });
+
+
 
 
 
